@@ -1,9 +1,10 @@
 from docx import Document
 from enum import Enum
 from importlib.resources import files
-
 from docx.table import Table
 from docx.text.paragraph import Paragraph
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 
 
 class Sections(Enum):
@@ -61,6 +62,115 @@ def print_table(table):
         print()
 
 
+def extract_formula(element):
+    """Извлекает формулы с правильным отображением степеней и индексов"""
+    namespaces = {
+        'm2006': 'http://schemas.openxmlformats.org/officeDocument/2006/math',
+        'm2010': 'http://schemas.microsoft.com/office/2007/8/2/math',
+        'm2013': 'http://schemas.microsoft.com/office/2010/10/math'
+    }
+
+    formula_parts = []
+
+    for ns_url in namespaces.values():
+        try:
+            # Ищем математические элементы
+            math_elements = element.xpath(f'.//*[local-name()="oMath" and namespace-uri()="{ns_url}"]')
+
+            for math in math_elements:
+                # Собираем элементы формулы в правильном порядке
+                stack = []
+                current_text = ""
+
+                for elem in math.iter():
+                    tag = elem.tag.split('}')[-1] if '}' in elem.tag else elem.tag
+
+                    if tag == "t":  # Текстовый элемент
+                        if elem.text:
+                            current_text += elem.text
+
+                    elif tag == "sup":  # Верхний индекс
+                        if current_text:
+                            stack.append(current_text)
+                            current_text = ""
+                        stack.append("^")  # Добавляем символ степени перед индексом
+
+                    elif tag == "sub":  # Нижний индекс
+                        if current_text:
+                            stack.append(current_text)
+                            current_text = ""
+                        stack.append("_")  # Добавляем символ индекса
+
+                    elif tag in ["e", "r"]:  # Элементы выражения
+                        if current_text:
+                            stack.append(current_text)
+                            current_text = ""
+
+                if current_text:
+                    stack.append(current_text)
+
+                # Собираем формулу из стека
+                formula = ""
+                for i, item in enumerate(stack):
+                    if item in ["^", "_"] and i < len(stack) - 1:
+                        formula += f"{item}{stack[i + 1]}"
+                        stack[i + 1] = ""  # Помечаем как обработанный
+                    elif item and item not in ["^", "_"]:
+                        formula += item
+
+                if formula:
+                    formula_parts.append(formula.strip())
+
+                if formula_parts:
+                    break
+
+        except Exception as e:
+            continue
+
+    if formula_parts:
+        # Улучшаем читаемость формулы
+        formula = " ".join(formula_parts)
+        formula = formula.replace("  ", " ").strip()
+        # Добавляем пробелы вокруг операторов
+        formula = formula.replace("*", " × ").replace("/", " / ")
+        return f"[ФОРМУЛА: {formula}]"
+
+    return ""
+
+
+def process_element(element, doc):
+    """Обрабатывает элемент документа и возвращает его текстовое представление"""
+    text = ""
+
+    # Обработка параграфов
+    if element.tag.endswith('p'):
+        paragraph = Paragraph(element, doc)
+        text = paragraph.text.strip()
+
+        # Проверяем наличие формул в параграфе
+        formula_text = extract_formula(element)
+        if formula_text:
+            text += " " + formula_text
+
+    # Обработка таблиц
+    elif element.tag.endswith('tbl'):
+        table = Table(element, doc)
+        text = "\nТаблица:\n"
+        col_widths = [0] * len(table.columns)
+        for row in table.rows:
+            for i, cell in enumerate(row.cells):
+                if len(cell.text) > col_widths[i]:
+                    col_widths[i] = len(cell.text)
+
+        for row in table.rows:
+            row_text = ""
+            for i, cell in enumerate(row.cells):
+                row_text += cell.text.ljust(col_widths[i] + 2)
+            text += row_text + "\n"
+
+    return text
+
+
 def show_theory(param):
     filename = f"{Sections.get_theoryfilename_prefix(param)}.docx"
     doc_path = files('mgp').joinpath(filename)
@@ -71,42 +181,18 @@ def show_theory(param):
     current_answer = ""
 
     for element in doc.element.body.xpath('*'):
-        # Обработка параграфов
-        if element.tag.endswith('p'):
-            paragraph = Paragraph(element, doc)
-            text = paragraph.text.strip()
+        element_text = process_element(element, doc)
 
-            if not text:
-                continue
+        if not element_text:
+            continue
 
-            if text[0].isdigit() and '.' in text.split()[0]:
-                if current_question:
-                    questions.append((current_question, current_answer))
-                current_question = text
-                current_answer = ""
-            else:
-                current_answer += text + "\n"
-
-        # Обработка таблиц
-        elif element.tag.endswith('tbl'):
-            table = Table(element, doc)
-            if current_answer:  # Добавляем таблицу к текущему ответу
-                current_answer += "\nТаблица:\n"
-                # Преобразуем таблицу в текст
-                col_widths = [0] * len(table.columns)
-                for row in table.rows:
-                    for i, cell in enumerate(row.cells):
-                        if len(cell.text) > col_widths[i]:
-                            col_widths[i] = len(cell.text)
-
-                table_text = ""
-                for row in table.rows:
-                    row_text = ""
-                    for i, cell in enumerate(row.cells):
-                        row_text += cell.text.ljust(col_widths[i] + 2)
-                    table_text += row_text + "\n"
-
-                current_answer += table_text + "\n"
+        if element_text[0].isdigit() and '.' in element_text.split()[0]:
+            if current_question:
+                questions.append((current_question, current_answer))
+            current_question = element_text
+            current_answer = ""
+        else:
+            current_answer += element_text + "\n"
 
     if current_question:
         questions.append((current_question, current_answer))
@@ -140,42 +226,18 @@ def show_prac(param):
     current_answer = ""
 
     for element in doc.element.body.xpath('*'):
-        # Обработка параграфов
-        if element.tag.endswith('p'):
-            paragraph = Paragraph(element, doc)
-            text = paragraph.text.strip()
+        element_text = process_element(element, doc)
 
-            if not text:
-                continue
+        if not element_text:
+            continue
 
-            if text[0].isdigit() and '.' in text.split()[0]:
-                if current_question:
-                    questions.append((current_question, current_answer))
-                current_question = text
-                current_answer = ""
-            else:
-                current_answer += text + "\n"
-
-        # Обработка таблиц
-        elif element.tag.endswith('tbl'):
-            table = Table(element, doc)
-            if current_answer:  # Добавляем таблицу к текущему ответу
-                current_answer += "\nТаблица:\n"
-                # Преобразуем таблицу в текст
-                col_widths = [0] * len(table.columns)
-                for row in table.rows:
-                    for i, cell in enumerate(row.cells):
-                        if len(cell.text) > col_widths[i]:
-                            col_widths[i] = len(cell.text)
-
-                table_text = ""
-                for row in table.rows:
-                    row_text = ""
-                    for i, cell in enumerate(row.cells):
-                        row_text += cell.text.ljust(col_widths[i] + 2)
-                    table_text += row_text + "\n"
-
-                current_answer += table_text + "\n"
+        if element_text[0].isdigit() and '.' in element_text.split()[0]:
+            if current_question:
+                questions.append((current_question, current_answer))
+            current_question = element_text
+            current_answer = ""
+        else:
+            current_answer += element_text + "\n"
 
     if current_question:
         questions.append((current_question, current_answer))
@@ -238,6 +300,6 @@ def show():
                 print("")
         except ValueError:
             print("")
-#
-# if __name__ == "__main__":
-#     show()
+
+if __name__ == "__main__":
+    show()

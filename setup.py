@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="mgp",
-    version="0.1.1",
+    version="0.1.2",
     packages=find_packages(),
     author="Твоё имя",
     description="Простая библиотека, которая говорит Hello, world!",
