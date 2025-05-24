@@ -11,7 +11,7 @@ setup(
         "mgp": ["mgp"],
     },
     package_data={
-        "mgp": ["t_oop.txt"],
+        "mgp": ["*.txt"],
     },
     include_package_data=True,
 )
