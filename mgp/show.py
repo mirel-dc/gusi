@@ -2,6 +2,10 @@ from docx import Document
 from enum import Enum
 from importlib.resources import files
 
+from docx.table import Table
+from docx.text.paragraph import Paragraph
+
+
 class Sections(Enum):
     OOP = "Объектно-ориентированное программирование"
     DB = "Базы данных"
@@ -41,6 +45,22 @@ class Sections(Enum):
         }
         return mapping.get(section_name, "")
 
+
+def print_table(table):
+    """Печатает таблицу из docx в консоль"""
+    col_widths = [0] * len(table.columns)
+
+    for row in table.rows:
+        for i, cell in enumerate(row.cells):
+            if len(cell.text) > col_widths[i]:
+                col_widths[i] = len(cell.text)
+
+    for row in table.rows:
+        for i, cell in enumerate(row.cells):
+            print(cell.text.ljust(col_widths[i] + 2), end='')
+        print()
+
+
 def show_theory(param):
     filename = f"{Sections.get_theoryfilename_prefix(param)}.docx"
     doc_path = files('mgp').joinpath(filename)
@@ -50,18 +70,43 @@ def show_theory(param):
     current_question = ""
     current_answer = ""
 
-    for paragraph in doc.paragraphs:
-        text = paragraph.text.strip()
-        if not text:
-            continue
+    for element in doc.element.body.xpath('*'):
+        # Обработка параграфов
+        if element.tag.endswith('p'):
+            paragraph = Paragraph(element, doc)
+            text = paragraph.text.strip()
 
-        if text[0].isdigit() and '.' in text.split()[0]:
-            if current_question:
-                questions.append((current_question, current_answer))
-            current_question = text
-            current_answer = ""
-        else:
-            current_answer += text + "\n"
+            if not text:
+                continue
+
+            if text[0].isdigit() and '.' in text.split()[0]:
+                if current_question:
+                    questions.append((current_question, current_answer))
+                current_question = text
+                current_answer = ""
+            else:
+                current_answer += text + "\n"
+
+        # Обработка таблиц
+        elif element.tag.endswith('tbl'):
+            table = Table(element, doc)
+            if current_answer:  # Добавляем таблицу к текущему ответу
+                current_answer += "\nТаблица:\n"
+                # Преобразуем таблицу в текст
+                col_widths = [0] * len(table.columns)
+                for row in table.rows:
+                    for i, cell in enumerate(row.cells):
+                        if len(cell.text) > col_widths[i]:
+                            col_widths[i] = len(cell.text)
+
+                table_text = ""
+                for row in table.rows:
+                    row_text = ""
+                    for i, cell in enumerate(row.cells):
+                        row_text += cell.text.ljust(col_widths[i] + 2)
+                    table_text += row_text + "\n"
+
+                current_answer += table_text + "\n"
 
     if current_question:
         questions.append((current_question, current_answer))
@@ -76,13 +121,14 @@ def show_theory(param):
             choice = int(input(f"(1-{len(questions) + 1}): "))
             if 1 <= choice <= len(questions):
                 print("\n" + questions[choice - 1][1])
-                input("\nлюбую кнопку")
+                input("\nНажмите Enter чтобы продолжить...")
             elif choice == len(questions) + 1:
                 break
             else:
                 print("")
         except ValueError:
             print("")
+
 
 def show_prac(param):
     filename = f"{Sections.get_pracfilename_prefix(param)}.docx"
@@ -93,18 +139,43 @@ def show_prac(param):
     current_question = ""
     current_answer = ""
 
-    for paragraph in doc.paragraphs:
-        text = paragraph.text.strip()
-        if not text:
-            continue
+    for element in doc.element.body.xpath('*'):
+        # Обработка параграфов
+        if element.tag.endswith('p'):
+            paragraph = Paragraph(element, doc)
+            text = paragraph.text.strip()
 
-        if text[0].isdigit() and '.' in text.split()[0]:
-            if current_question:
-                questions.append((current_question, current_answer))
-            current_question = text
-            current_answer = ""
-        else:
-            current_answer += text + "\n"
+            if not text:
+                continue
+
+            if text[0].isdigit() and '.' in text.split()[0]:
+                if current_question:
+                    questions.append((current_question, current_answer))
+                current_question = text
+                current_answer = ""
+            else:
+                current_answer += text + "\n"
+
+        # Обработка таблиц
+        elif element.tag.endswith('tbl'):
+            table = Table(element, doc)
+            if current_answer:  # Добавляем таблицу к текущему ответу
+                current_answer += "\nТаблица:\n"
+                # Преобразуем таблицу в текст
+                col_widths = [0] * len(table.columns)
+                for row in table.rows:
+                    for i, cell in enumerate(row.cells):
+                        if len(cell.text) > col_widths[i]:
+                            col_widths[i] = len(cell.text)
+
+                table_text = ""
+                for row in table.rows:
+                    row_text = ""
+                    for i, cell in enumerate(row.cells):
+                        row_text += cell.text.ljust(col_widths[i] + 2)
+                    table_text += row_text + "\n"
+
+                current_answer += table_text + "\n"
 
     if current_question:
         questions.append((current_question, current_answer))
@@ -119,14 +190,13 @@ def show_prac(param):
             choice = int(input(f"(1-{len(questions) + 1}): "))
             if 1 <= choice <= len(questions):
                 print("\n" + questions[choice - 1][1])
-                input("\nлюбую кнопку")
+                input("\nНажмите Enter чтобы продолжить...")
             elif choice == len(questions) + 1:
                 break
             else:
                 print("")
         except ValueError:
             print("")
-
 
 def show_submenu(param):
     while True:
@@ -168,3 +238,6 @@ def show():
                 print("")
         except ValueError:
             print("")
+
+if __name__ == "__main__":
+    show()
