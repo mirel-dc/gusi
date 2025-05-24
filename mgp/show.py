@@ -1,3 +1,4 @@
+from docx import Document
 from enum import Enum
 
 
@@ -40,30 +41,16 @@ class Sections(Enum):
         }
         return mapping.get(section_name, "")
 
-
-def read_txt_file(filename):
-    try:
-        with open(filename, 'r', encoding='utf-16') as file:
-            # Читаем весь файл и разбиваем на строки, сохраняя переносы строк
-            return file.read().splitlines(keepends=True)
-    except FileNotFoundError:
-        print(f"Файл {filename} не найден")
-        return []
-    except Exception as e:
-        print(f"Ошибка при чтении файла {filename}: {e}")
-        return []
-
-
 def show_theory(param):
-    filename = f"{Sections.get_theoryfilename_prefix(param)}.txt"
+    filename = f"{Sections.get_theoryfilename_prefix(param)}.docx"
 
-    lines = read_txt_file(filename)
+    doc = Document(filename)
     questions = []
     current_question = ""
     current_answer = ""
 
-    for line in lines:
-        text = line.strip()
+    for paragraph in doc.paragraphs:
+        text = paragraph.text.strip()
         if not text:
             continue
 
@@ -88,7 +75,7 @@ def show_theory(param):
             choice = int(input(f"(1-{len(questions) + 1}): "))
             if 1 <= choice <= len(questions):
                 print("\n" + questions[choice - 1][1])
-                input("\nЖмяк Enter")
+                input("\nлюбую кнопку")
             elif choice == len(questions) + 1:
                 break
             else:
@@ -96,17 +83,16 @@ def show_theory(param):
         except ValueError:
             print("")
 
-
 def show_prac(param):
-    filename = f"{Sections.get_pracfilename_prefix(param)}.txt"
+    filename = f"{Sections.get_pracfilename_prefix(param)}.docx"
 
-    lines = read_txt_file(filename)
+    doc = Document(filename)
     questions = []
     current_question = ""
     current_answer = ""
 
-    for line in lines:
-        text = line.strip()
+    for paragraph in doc.paragraphs:
+        text = paragraph.text.strip()
         if not text:
             continue
 
@@ -131,7 +117,7 @@ def show_prac(param):
             choice = int(input(f"(1-{len(questions) + 1}): "))
             if 1 <= choice <= len(questions):
                 print("\n" + questions[choice - 1][1])
-                input("\nЖмяк Enter")
+                input("\nлюбую кнопку")
             elif choice == len(questions) + 1:
                 break
             else:
@@ -152,7 +138,8 @@ def show_submenu(param):
             if choice == 1:
                 show_theory(param)
             elif choice == 2:
-                show_prac(param)
+                print(f"Вы выбрали: Практика ({param})")
+                input("\nлюбую кнопку")
             elif choice == 3:
                 break
             else:
@@ -179,7 +166,3 @@ def show():
                 print("")
         except ValueError:
             print("")
-
-
-if __name__ == "__main__":
-    show()
