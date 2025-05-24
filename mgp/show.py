@@ -1,6 +1,6 @@
 from docx import Document
 from enum import Enum
-
+from importlib.resources import files
 
 class Sections(Enum):
     OOP = "Объектно-ориентированное программирование"
@@ -43,8 +43,9 @@ class Sections(Enum):
 
 def show_theory(param):
     filename = f"{Sections.get_theoryfilename_prefix(param)}.docx"
+    doc_path = files('mgp').joinpath(filename)
+    doc = Document(doc_path)
 
-    doc = Document(filename)
     questions = []
     current_question = ""
     current_answer = ""
@@ -85,8 +86,9 @@ def show_theory(param):
 
 def show_prac(param):
     filename = f"{Sections.get_pracfilename_prefix(param)}.docx"
+    doc_path = files('mgp').joinpath(filename)
+    doc = Document(doc_path)
 
-    doc = Document(filename)
     questions = []
     current_question = ""
     current_answer = ""
