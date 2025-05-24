@@ -13,5 +13,8 @@ setup(
     package_data={
         "mgp": ["*.docx"],
     },
+    install_requires = [
+        "python-docx",
+    ],
     include_package_data=True,
 )
