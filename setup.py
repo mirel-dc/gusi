@@ -11,7 +11,7 @@ setup(
         "mgp": ["mgp"],
     },
     package_data={
-        "mgp": ["*.txt"],
+        "mgp": ["*.docx"],
     },
     include_package_data=True,
 )
