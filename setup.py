@@ -7,8 +7,11 @@ setup(
     author="Твоё имя",
     description="Простая библиотека, которая говорит Hello, world!",
     python_requires=">=3.6",
+    package={
+        "mgp": ["mgp"],
+    },
     package_data={
-        "mgp": ["*.txt"],
+        "mgp": ["t_oop.txt"],
     },
     include_package_data=True,
 )
