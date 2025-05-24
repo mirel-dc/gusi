@@ -8,6 +8,7 @@ setup(
     description="Простая библиотека, которая говорит Hello, world!",
     python_requires=">=3.6",
     package_data={
-        "mgp": ["*.docx"],  # или конкретные пути: ["data/*.docx"]
+        "mgp": ["*.docx"],
     },
+    include_package_data=True,
 )
