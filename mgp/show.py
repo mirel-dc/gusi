@@ -1,6 +1,5 @@
-import os
 from docx import Document
-from enum import Enum, auto
+from enum import Enum
 
 
 class Sections(Enum):
