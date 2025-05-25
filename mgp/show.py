@@ -267,7 +267,8 @@ def show_submenu(param):
     if param == Sections.DEEPSEEK.value:
         try:
             print("Запуск deepseek.py...")
-            process = subprocess.Popen(["python", "deepseek.py"])
+            script_path = files('mgp').joinpath('deepseek.py')
+            process = subprocess.Popen(["python", str(script_path)])
             process.wait()  # Ждем завершения процесса
             print("deepseek.py завершен.")
             return
@@ -316,5 +317,5 @@ def show():
             print("")
 
 
-if __name__ == "__main__":
-    show()
+# if __name__ == "__main__":
+#     show()
