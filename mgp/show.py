@@ -39,9 +39,7 @@ class Sections(Enum):
             cls.DB.value: "p_bd",
             cls.NETWORK.value: "p_sp",
             cls.PROGRAMMING.value: "p_p",
-            cls.ALGORITHMS.value: "p_siaod",
             cls.QUEUE_THEORY.value: "p_tmo",
-            cls.SYS_ADMIN.value: "p_sisa"
         }
         return mapping.get(section_name, "")
 
@@ -308,5 +306,5 @@ def show():
         except ValueError:
             print("")
 
-if __name__ == "__main__":
-    show()
+# if __name__ == "__main__":
+#     show()
