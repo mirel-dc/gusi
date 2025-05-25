@@ -36,7 +36,6 @@ class Sections(Enum):
         mapping = {
             cls.OOP.value: "p_oop",
             cls.DB.value: "p_bd",
-            cls.INFO_SEC.value: "p_zi",
             cls.NETWORK.value: "p_sp",
             cls.ALGORITHMS.value: "p_siaod",
             cls.QUEUE_THEORY.value: "p_tmo",
@@ -170,7 +169,11 @@ def process_element(element, doc):
 
 
 def show_theory(param):
-    filename = f"{Sections.get_theoryfilename_prefix(param)}.docx"
+    filenameprefix = Sections.get_theoryfilename_prefix(param)
+    if len(filenameprefix) <= 0:
+        print("Теории нет")
+        return
+    filename = f"{filenameprefix}.docx"
     doc_path = files('mgp').joinpath(filename)
     doc = Document(doc_path)
 
@@ -215,7 +218,12 @@ def show_theory(param):
 
 
 def show_prac(param):
-    filename = f"{Sections.get_pracfilename_prefix(param)}.docx"
+    filenameprefix = Sections.get_pracfilename_prefix(param)
+    if len(filenameprefix) <= 0:
+        print("Практики нет")
+        return
+
+    filename = f"{filenameprefix}.docx"
     doc_path = files('mgp').joinpath(filename)
     doc = Document(doc_path)
 
@@ -270,8 +278,7 @@ def show_submenu(param):
             if choice == 1:
                 show_theory(param)
             elif choice == 2:
-                print(f"Вы выбрали: Практика ({param})")
-                input("\nлюбую кнопку")
+                show_prac(param)
             elif choice == 3:
                 break
             else:
@@ -299,5 +306,5 @@ def show():
         except ValueError:
             print("")
 
-# if __name__ == "__main__":
-#     show()
+if __name__ == "__main__":
+    show()
