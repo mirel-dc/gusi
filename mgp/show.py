@@ -3,8 +3,6 @@ from enum import Enum
 from importlib.resources import files
 from docx.table import Table
 from docx.text.paragraph import Paragraph
-from docx.oxml import OxmlElement
-from docx.oxml.ns import qn
 
 
 class Sections(Enum):
@@ -301,5 +299,5 @@ def show():
         except ValueError:
             print("")
 
-if __name__ == "__main__":
-    show()
+# if __name__ == "__main__":
+#     show()
