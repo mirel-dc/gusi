@@ -5,7 +5,7 @@ setup(
     version="0.1.3",
     packages=find_packages(),
     author="Твоё имя",
-    description="Простая библиотека, которая говорит Hello, world!",
+    description="Сборник мегагигаприколов",
     python_requires=">=3.6",
     package={
         "mgp": ["mgp"],
