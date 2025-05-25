@@ -1,3 +1,5 @@
+import re
+
 from docx import Document
 from enum import Enum
 from importlib.resources import files
@@ -60,77 +62,69 @@ def print_table(table):
 
 
 def extract_formula(element):
-    """Извлекает формулы с правильным отображением степеней и индексов"""
+    """Извлекает формулы с правильной обработкой скобок и дробных выражений"""
     namespaces = {
+        'm': 'http://schemas.openxmlformats.org/officeDocument/2006/math',
         'm2006': 'http://schemas.openxmlformats.org/officeDocument/2006/math',
         'm2010': 'http://schemas.microsoft.com/office/2007/8/2/math',
         'm2013': 'http://schemas.microsoft.com/office/2010/10/math'
     }
 
-    formula_parts = []
+    def process_element(elem, in_frac=False, in_bracket=False):
+        """Рекурсивно обрабатывает элементы формулы"""
+        tag = elem.tag.split('}')[-1] if '}' in elem.tag else elem.tag
 
-    for ns_url in namespaces.values():
+        if tag == "t":  # Текстовый элемент
+            return elem.text if elem.text else ""
+
+        elif tag == "sup":  # Верхний индекс
+            content = "".join(process_element(e, in_frac, in_bracket) for e in elem)
+            return f"^{{{content}}}" if content else ""
+
+        elif tag == "sub":  # Нижний индекс
+            content = "".join(process_element(e, in_frac, in_bracket) for e in elem)
+            return f"_{{{content}}}" if content else ""
+
+        elif tag in ["frac", "m:f"]:  # Дробь
+            if len(elem) >= 2:
+                num = "".join(process_element(e, True, in_bracket) for e in elem[0])
+                den = "".join(process_element(e, True, in_bracket) for e in elem[1])
+                return f"({num})/({den})"
+
+        elif tag in ["d", "m:d"]:  # Скобки
+            bracket_type = elem.get("m:begChr", "(")  # Начальная скобка
+            content = "".join(process_element(e, in_frac, True) for e in elem)
+            return f"{bracket_type}{content})"  # Закрывающая скобка
+
+        elif tag in ["num", "m:num", "den", "m:den"]:  # Числитель/знаменатель
+            return "".join(process_element(e, in_frac, in_bracket) for e in elem)
+
+        elif tag in ["r", "e"]:  # Группирующие элементы
+            content = "".join(process_element(e, in_frac, in_bracket) for e in elem)
+            # Добавляем скобки только если внутри дроби и выражение сложное
+            if in_frac and not in_bracket and ("+" in content or "-" in content or "*" in content):
+                return f"({content})"
+            return content
+
+        else:
+            return "".join(process_element(e, in_frac, in_bracket) for e in elem)
+
+    for ns_prefix, ns_url in namespaces.items():
         try:
-            # Ищем математические элементы
             math_elements = element.xpath(f'.//*[local-name()="oMath" and namespace-uri()="{ns_url}"]')
-
             for math in math_elements:
-                # Собираем элементы формулы в правильном порядке
-                stack = []
-                current_text = ""
-
-                for elem in math.iter():
-                    tag = elem.tag.split('}')[-1] if '}' in elem.tag else elem.tag
-
-                    if tag == "t":  # Текстовый элемент
-                        if elem.text:
-                            current_text += elem.text
-
-                    elif tag == "sup":  # Верхний индекс
-                        if current_text:
-                            stack.append(current_text)
-                            current_text = ""
-                        stack.append("^")  # Добавляем символ степени перед индексом
-
-                    elif tag == "sub":  # Нижний индекс
-                        if current_text:
-                            stack.append(current_text)
-                            current_text = ""
-                        stack.append("_")  # Добавляем символ индекса
-
-                    elif tag in ["e", "r"]:  # Элементы выражения
-                        if current_text:
-                            stack.append(current_text)
-                            current_text = ""
-
-                if current_text:
-                    stack.append(current_text)
-
-                # Собираем формулу из стека
-                formula = ""
-                for i, item in enumerate(stack):
-                    if item in ["^", "_"] and i < len(stack) - 1:
-                        formula += f"{item}{stack[i + 1]}"
-                        stack[i + 1] = ""  # Помечаем как обработанный
-                    elif item and item not in ["^", "_"]:
-                        formula += item
-
+                formula = "".join(process_element(e) for e in math)
                 if formula:
-                    formula_parts.append(formula.strip())
-
-                if formula_parts:
-                    break
-
+                    # Постобработка формулы
+                    formula = formula.replace("  ", " ").strip()
+                    formula = formula.replace("...", "…")
+                    # Убираем лишние скобки вокруг простых переменных
+                    formula = re.sub(r'\((\w+)\)', r'\1', formula)
+                    # Добавляем пробелы вокруг операторов
+                    formula = formula.replace("+", " + ").replace("-", " - ")
+                    return f"[ФОРМУЛА: {formula}]"
         except Exception as e:
             continue
-
-    if formula_parts:
-        # Улучшаем читаемость формулы
-        formula = " ".join(formula_parts)
-        formula = formula.replace("  ", " ").strip()
-        # Добавляем пробелы вокруг операторов
-        formula = formula.replace("*", " × ").replace("/", " / ")
-        return f"[ФОРМУЛА: {formula}]"
 
     return ""
 
@@ -306,5 +300,5 @@ def show():
         except ValueError:
             print("")
 
-# if __name__ == "__main__":
-#     show()
+if __name__ == "__main__":
+    show()
