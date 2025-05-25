@@ -10,6 +10,7 @@ class Sections(Enum):
     DB = "Базы данных"
     INFO_SEC = "Защита информации"
     NETWORK = "Сетевое программирование"
+    PROGRAMMING = "Программирование"
     ALGORITHMS = "Структуры и алгоритмы обработки данных"
     QUEUE_THEORY = "Теория массового обслуживания"
     SYS_ADMIN = "Сетевое и системное администрирование"
@@ -37,6 +38,7 @@ class Sections(Enum):
             cls.OOP.value: "p_oop",
             cls.DB.value: "p_bd",
             cls.NETWORK.value: "p_sp",
+            cls.PROGRAMMING.value: "p_p",
             cls.ALGORITHMS.value: "p_siaod",
             cls.QUEUE_THEORY.value: "p_tmo",
             cls.SYS_ADMIN.value: "p_sisa"
