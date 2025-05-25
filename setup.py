@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="mgp",
-    version="0.1.3",
+    version="0.1.4",
     packages=find_packages(),
     author="Твоё имя",
     description="Сборник мегагигаприколов",
@@ -15,6 +15,7 @@ setup(
     },
     install_requires = [
         "python-docx",
+        "requests"
     ],
     include_package_data=True,
 )

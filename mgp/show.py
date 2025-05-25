@@ -1,5 +1,5 @@
 import re
-
+import subprocess
 from docx import Document
 from enum import Enum
 from importlib.resources import files
@@ -8,6 +8,7 @@ from docx.text.paragraph import Paragraph
 
 
 class Sections(Enum):
+    DEEPSEEK = "deepseek"
     OOP = "Объектно-ориентированное программирование"
     DB = "Базы данных"
     INFO_SEC = "Защита информации"
@@ -260,7 +261,21 @@ def show_prac(param):
         except ValueError:
             print("")
 
+
 def show_submenu(param):
+    # Если выбрана секция deepseek, запускаем файл deepseek.py и ждем завершения
+    if param == Sections.DEEPSEEK.value:
+        try:
+            print("Запуск deepseek.py...")
+            process = subprocess.Popen(["python", "deepseek.py"])
+            process.wait()  # Ждем завершения процесса
+            print("deepseek.py завершен.")
+            return
+        except FileNotFoundError:
+            print("Файл deepseek.py не найден!")
+            return
+
+    # Для других секций показываем обычное меню
     while True:
         print(f"\n--- {param} ---")
         print("1. Теория")
@@ -299,6 +314,7 @@ def show():
                 print("")
         except ValueError:
             print("")
+
 
 if __name__ == "__main__":
     show()
