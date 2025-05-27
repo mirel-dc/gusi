@@ -307,7 +307,7 @@ def show():
         print(f"{len(sections) + 1}. Выход")
 
         try:
-            choice = int(input("(1-8): "))
+            choice = int(input("(1-10): "))
             if 1 <= choice <= len(sections):
                 show_submenu(sections[choice - 1])
             elif choice == len(sections) + 1:
@@ -318,5 +318,5 @@ def show():
             print("")
 
 
-# if __name__ == "__main__":
-#     show()
+if __name__ == "__main__":
+    show()
