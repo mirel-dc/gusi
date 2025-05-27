@@ -43,6 +43,7 @@ class Sections(Enum):
             cls.NETWORK.value: "p_sp",
             cls.PROGRAMMING.value: "p_p",
             cls.QUEUE_THEORY.value: "p_tmo",
+            cls.SYS_ADMIN.value: "p_sisa"
         }
         return mapping.get(section_name, "")
 
